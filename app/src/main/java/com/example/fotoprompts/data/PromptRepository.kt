@@ -13,84 +13,81 @@ import com.example.fotoprompts.model.PromptCategory.INDIAN_STYLES
 import com.example.fotoprompts.model.PromptCategory.PHOTOGRAPHY
 import com.example.fotoprompts.model.PromptCategory.RETRO_VINTAGE
 import com.example.fotoprompts.model.PromptCategory.SCIFI_FUTURE
-import com.example.fotoprompts.model.PromptCategory.TRENDING
 
 /**
  * Curated, copy-paste-ready prompts for turning a photo into a stylized
- * image with ChatGPT / Gemini image generation. [TRENDING] entries are
- * ordered first since that's what most people are looking for.
+ * image with ChatGPT / Gemini image generation.
  */
 object PromptRepository {
 
     val all: List<PromptItem> = listOf(
-        // ---- TRENDING ----
         PromptItem(
-            "action_figure_box", "Action Figure Box", TRENDING,
+            "action_figure_box", "Action Figure Box", FUN_NOVELTY,
             "Turn this photo into a realistic collectible action figure inside blister packaging: a plastic clamshell case, a printed cardboard backer that uses this photo as the character art, a few matching accessories laid out beside the figure, and a small nameplate with a fitting title.",
             listOf("figurine", "packaging", "viral")
         ),
         PromptItem(
-            "pixar_3d", "3D Pixar Style", TRENDING,
+            "pixar_3d", "3D Pixar Style", ANIME_CARTOON,
             "Reimagine this photo as a 3D animated Pixar movie character: big expressive eyes, soft rounded features, warm cinematic lighting, and a colorful stylized background.",
             listOf("3d", "animated", "pixar")
         ),
         PromptItem(
-            "ghibli_anime", "Studio Ghibli Anime", TRENDING,
+            "ghibli_anime", "Studio Ghibli Anime", ANIME_CARTOON,
             "Redraw this photo in the hand-painted Studio Ghibli anime art style: soft watercolor backgrounds, warm nostalgic lighting, gentle linework, and a dreamy, whimsical atmosphere like a Miyazaki film.",
             listOf("anime", "ghibli", "watercolor")
         ),
         PromptItem(
-            "old_money", "Old Money Aesthetic", TRENDING,
+            "old_money", "Old Money Aesthetic", FASHION_PRODUCT,
             "Transform this photo into an old money aesthetic portrait: tailored neutral-tone clothing, soft natural light, a grand estate or library background, and a timeless, understated luxury feel.",
             listOf("fashion", "luxury", "portrait")
         ),
         PromptItem(
-            "polaroid_memory", "90s Polaroid", TRENDING,
+            "polaroid_memory", "90s Polaroid", RETRO_VINTAGE,
             "Turn this photo into a slightly faded 1990s Polaroid instant photo, with a white border, soft film grain, a warm color cast, and a handwritten date scrawled in the corner.",
             listOf("polaroid", "90s", "nostalgic")
         ),
         PromptItem(
-            "figurine_shelf", "Collectible Figurine", TRENDING,
+            "figurine_shelf", "Collectible Figurine", FUN_NOVELTY,
             "Turn this photo into a highly detailed collectible vinyl figurine displayed in its packaging box on a shelf, designer-toy style, with clean studio lighting and sharp product-photo detail.",
             listOf("figurine", "collectible", "toy")
         ),
         PromptItem(
-            "red_carpet", "Red Carpet Celebrity", TRENDING,
+            "red_carpet", "Red Carpet Celebrity", FASHION_PRODUCT,
             "Transform this photo into a red carpet paparazzi shot: flashing camera lights, a blurred press crowd in the background, a glamorous outfit, and a confident celebrity pose.",
             listOf("celebrity", "glamour", "event")
         ),
         PromptItem(
-            "wanted_poster", "Wild West Wanted Poster", TRENDING,
+            "wanted_poster", "Wild West Wanted Poster", FANTASY_HISTORY,
             "Turn this photo into an Old West 'WANTED' poster: aged sepia paper texture, torn edges, bold western typography, and a reward amount printed at the bottom.",
             listOf("western", "poster", "sepia")
         ),
         PromptItem(
-            "magazine_cover", "Magazine Cover", TRENDING,
+            "magazine_cover", "Magazine Cover", FASHION_PRODUCT,
             "Turn this photo into a glossy fashion magazine cover, complete with a masthead title, bold cover lines, professional retouching, and studio-quality lighting.",
             listOf("editorial", "cover", "glossy")
         ),
         PromptItem(
-            "claymation_char", "Claymation Character", TRENDING,
+            "claymation_char", "Claymation Character", FUN_NOVELTY,
             "Reimagine this photo as a claymation stop-motion character, with visible fingerprint textures, matte clay surfaces, and a handcrafted miniature set in the background.",
             listOf("claymation", "stopmotion", "handmade")
         ),
         PromptItem(
-            "lego_minifig", "LEGO Minifigure", TRENDING,
+            "lego_minifig", "LEGO Minifigure", FUN_NOVELTY,
             "Turn this photo into a LEGO minifigure version of the subject: the blocky plastic body, cylindrical head, printed facial expression, and a LEGO baseplate background.",
             listOf("lego", "toy", "blocky")
         ),
         PromptItem(
-            "visual_novel", "Anime Visual Novel Portrait", TRENDING,
+            "visual_novel", "Anime Visual Novel Portrait", ANIME_CARTOON,
             "Redraw this photo as an anime dating-sim visual novel character portrait: large expressive eyes, cel-shaded coloring, and a soft bokeh background.",
             listOf("anime", "game", "portrait")
         ),
         PromptItem(
-            "80s_style", "80s Style Portrait", TRENDING,
+            "80s_style", "80s Style Portrait", RETRO_VINTAGE,
             "Transform this photo into an 80s glamour shot: big teased hair, bold shoulder pads, neon eyeshadow, a laser-grid studio background, and soft glam lighting like a retro mall photo studio portrait.",
             listOf("80s", "retro", "glam")
         ),
         PromptItem(
-            "90s_style", "90s Style Photo", TRENDING,
+            "90s_style", "90s Style Photo", RETRO_VINTAGE,
             "Turn this photo into a 90s style photograph: soft film grain, warm nostalgic color tones, a candid snapshot feel, and a 90s fashion look like a photo pulled from an old yearbook.",
             listOf("90s", "retro", "nostalgic")
         ),

@@ -32,6 +32,8 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -78,8 +80,9 @@ import kotlinx.coroutines.launch
 private const val PREFS_NAME = "foto_prompts_prefs"
 private const val KEY_FAVORITES = "favorites"
 
+private val FAVORITE_ACCENT = Color(0xFFE8607B)
+
 private val CategoryAccents: Map<PromptCategory, Color> = mapOf(
-    PromptCategory.TRENDING to Color(0xFFFF6B35),
     PromptCategory.COUPLES to Color(0xFFE85D9E),
     PromptCategory.INDIAN_STYLES to Color(0xFFE0A038),
     PromptCategory.PHOTOGRAPHY to Color(0xFF4A90D9),
@@ -155,6 +158,13 @@ fun PromptLibraryApp() {
         matchesCategory && matchesFavorites && matchesSearch
     }
 
+    val showFavoritesSection = favorites.isNotEmpty() && !favoritesOnly && !searchActive && selectedCategory == null
+    val favoritePrompts = if (showFavoritesSection) {
+        PromptRepository.all.filter { it.id in favorites }
+    } else {
+        emptyList()
+    }
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
@@ -175,11 +185,17 @@ fun PromptLibraryApp() {
                             Icon(Icons.Filled.Search, contentDescription = "Search")
                         }
                         IconToggleButton(checked = favoritesOnly, onCheckedChange = { favoritesOnly = it }) {
-                            Icon(
-                                imageVector = if (favoritesOnly) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                                contentDescription = "Show favorites only",
-                                tint = if (favoritesOnly) Color(0xFFE8607B) else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            BadgedBox(badge = {
+                                if (favorites.isNotEmpty()) {
+                                    Badge(containerColor = FAVORITE_ACCENT) { Text("${favorites.size}") }
+                                }
+                            }) {
+                                Icon(
+                                    imageVector = if (favoritesOnly) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                                    contentDescription = "Show favorites only",
+                                    tint = if (favoritesOnly) FAVORITE_ACCENT else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                 )
@@ -226,6 +242,24 @@ fun PromptLibraryApp() {
                     .fillMaxSize()
                     .padding(padding)
             ) {
+                if (showFavoritesSection) {
+                    item(key = "favorites_header") {
+                        SectionHeader("❤️  Your Favorites", FAVORITE_ACCENT)
+                    }
+                    items(favoritePrompts, key = { "fav_${it.id}" }) { item ->
+                        PromptCard(
+                            item = item,
+                            isFavorite = true,
+                            onToggleFavorite = { toggleFavorite(item.id) },
+                            onCopy = { copyPrompt(item) },
+                            onShare = { sharePrompt(context, item) },
+                            onOpenDetail = { detailPrompt = item }
+                        )
+                    }
+                    item(key = "all_styles_header") {
+                        SectionHeader("✨  All Styles", MaterialTheme.colorScheme.primary)
+                    }
+                }
                 items(visiblePrompts, key = { it.id }) { item ->
                     PromptCard(
                         item = item,
@@ -258,6 +292,17 @@ fun PromptLibraryApp() {
             onDismiss = { showCategoryPicker = false }
         )
     }
+}
+
+@Composable
+private fun SectionHeader(text: String, accent: Color) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Black,
+        color = accent,
+        modifier = Modifier.padding(vertical = 4.dp)
+    )
 }
 
 @Composable
@@ -430,7 +475,7 @@ private fun PromptCard(
                     Icon(
                         imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                         contentDescription = "Toggle favorite",
-                        tint = if (isFavorite) Color(0xFFE8607B) else MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = if (isFavorite) FAVORITE_ACCENT else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -538,7 +583,7 @@ private fun PromptDetailDialog(
                         Icon(
                             imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                             contentDescription = "Toggle favorite",
-                            tint = if (isFavorite) Color(0xFFE8607B) else MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = if (isFavorite) FAVORITE_ACCENT else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     FilledTonalButton(onClick = onShare, modifier = Modifier.padding(start = 4.dp)) {

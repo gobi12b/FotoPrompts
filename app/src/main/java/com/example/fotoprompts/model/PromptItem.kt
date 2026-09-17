@@ -1,7 +1,6 @@
 package com.example.fotoprompts.model
 
 enum class PromptCategory(val label: String, val emoji: String) {
-    TRENDING("Trending", "🔥"),
     COUPLES("Couples", "💑"),
     INDIAN_STYLES("Indian Styles", "🪔"),
     PHOTOGRAPHY("Photography", "📷"),
