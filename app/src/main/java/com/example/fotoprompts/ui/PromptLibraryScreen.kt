@@ -2,6 +2,7 @@ package com.example.fotoprompts.ui
 
 import android.content.Context
 import android.content.Intent
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -31,6 +32,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Favorite
@@ -61,6 +63,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -70,11 +73,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -108,9 +117,19 @@ private val CategoryAccents: Map<PromptCategory, Color> = mapOf(
 
 private fun PromptCategory.accent(): Color = CategoryAccents[this] ?: Color(0xFF7C4DFF)
 
+/** Short form for compact spaces (the avatar tray) — full label still shows in the sheet and on cards. */
+private fun PromptCategory.shortLabel(): String = label.substringBefore(" & ")
+
 /** A bold two-tone gradient derived from a single accent color, used for poster cards and tiles. */
 private fun posterGradient(accent: Color): Brush =
     Brush.linearGradient(listOf(accent, lerp(accent, Color.Black, 0.55f)))
+
+/** Darkened accent for an icon sitting on a white/light circle — guarantees contrast for light accents (gold, tan). */
+private fun iconTintOnWhite(accent: Color): Color = lerp(accent, Color.Black, 0.3f)
+
+/** Black or white, whichever reads better on top of the given background color. */
+private fun contentColorFor(background: Color): Color =
+    if (background.luminance() > 0.5f) Color.Black else Color.White
 
 private fun loadFavorites(context: Context): Set<String> =
     context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -138,10 +157,19 @@ fun PromptLibraryApp() {
     val clipboard = LocalClipboardManager.current
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val searchFocusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     var selectedTab by rememberSaveable { mutableStateOf(0) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var searchActive by rememberSaveable { mutableStateOf(false) }
+
+    fun closeSearch() {
+        searchActive = false
+        searchQuery = ""
+    }
+
+    BackHandler(enabled = searchActive) { closeSearch() }
     var selectedCategory by rememberSaveable { mutableStateOf<PromptCategory?>(null) }
     var favorites by remember { mutableStateOf(loadFavorites(context)) }
     var detailPrompt by remember { mutableStateOf<PromptItem?>(null) }
@@ -190,7 +218,9 @@ fun PromptLibraryApp() {
                     ),
                     actions = {
                         if (selectedTab == 0) {
-                            IconButton(onClick = { searchActive = !searchActive }) {
+                            IconButton(onClick = {
+                                if (searchActive) closeSearch() else searchActive = true
+                            }) {
                                 Icon(Icons.Filled.Search, contentDescription = "Search")
                             }
                         }
@@ -203,11 +233,25 @@ fun PromptLibraryApp() {
                             onValueChange = { searchQuery = it },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                                .focusRequester(searchFocusRequester),
                             placeholder = { Text("Search styles, e.g. \"drone\" or \"anime\"") },
                             singleLine = true,
-                            shape = RoundedCornerShape(16.dp)
+                            shape = RoundedCornerShape(16.dp),
+                            trailingIcon = {
+                                if (searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = { searchQuery = "" }) {
+                                        Icon(Icons.Filled.Clear, contentDescription = "Clear search")
+                                    }
+                                }
+                            }
                         )
+                    }
+                    LaunchedEffect(searchActive) {
+                        if (searchActive) {
+                            searchFocusRequester.requestFocus()
+                            keyboardController?.show()
+                        }
                     }
                     if (!searchActive) {
                         Surface(color = MaterialTheme.colorScheme.surfaceContainer) {
@@ -337,6 +381,7 @@ private fun CategoryTray(
             CategoryAvatar(
                 emoji = "✨",
                 label = "All",
+                fullLabel = "All Styles",
                 gradient = posterGradient(MaterialTheme.colorScheme.primary),
                 isSelected = selectedCategory == null,
                 onClick = { onSelect(null) }
@@ -345,7 +390,8 @@ private fun CategoryTray(
         items(PromptCategory.entries.toList()) { category ->
             CategoryAvatar(
                 emoji = category.emoji,
-                label = category.label,
+                label = category.shortLabel(),
+                fullLabel = category.label,
                 gradient = posterGradient(category.accent()),
                 isSelected = selectedCategory == category,
                 onClick = { onSelect(if (selectedCategory == category) null else category) }
@@ -361,6 +407,7 @@ private fun CategoryTray(
 private fun CategoryAvatar(
     emoji: String,
     label: String,
+    fullLabel: String,
     gradient: Brush,
     isSelected: Boolean,
     onClick: () -> Unit
@@ -377,7 +424,10 @@ private fun CategoryAvatar(
                 .then(
                     if (isSelected) Modifier.border(3.dp, Color.White, CircleShape) else Modifier
                 )
-                .clickable(onClick = onClick),
+                .clickable(onClick = onClick)
+                .semantics {
+                    contentDescription = if (isSelected) "$fullLabel, selected" else fullLabel
+                },
             contentAlignment = Alignment.Center
         ) {
             Text(emoji, fontSize = 24.sp)
@@ -408,12 +458,13 @@ private fun SeeAllAvatar(onClick: () -> Unit) {
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                 .border(1.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), CircleShape)
-                .clickable(onClick = onClick),
+                .clickable(onClick = onClick)
+                .semantics { contentDescription = "See all styles" },
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 Icons.Filled.GridView,
-                contentDescription = "See all styles",
+                contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -604,6 +655,8 @@ private fun PromptPosterCard(
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Black,
                 color = Color.White,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = 16.dp)
             )
             Text(
@@ -640,7 +693,7 @@ private fun PromptPosterCard(
                 PosterIconButton(
                     onClick = onCopy,
                     containerColor = Color.White,
-                    iconTint = accent,
+                    iconTint = iconTintOnWhite(accent),
                     icon = Icons.Filled.ContentCopy,
                     contentDescription = "Copy",
                 )
@@ -761,7 +814,10 @@ private fun PromptDetailDialog(
                         Button(
                             onClick = onCopy,
                             modifier = Modifier.padding(start = 8.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = accent, contentColor = Color.White)
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = accent,
+                                contentColor = contentColorFor(accent)
+                            )
                         ) {
                             Icon(Icons.Filled.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp))
                             Text("Copy", modifier = Modifier.padding(start = 6.dp))
